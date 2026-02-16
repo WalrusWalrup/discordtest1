@@ -1,9 +1,25 @@
 export const config = { api: { bodyParser: true } };
 
-const keys = globalThis.__KEYS__ || (globalThis.__KEYS__ = {
-  "TESTKEY123": { uses: 0, maxUses: 1, expires: Date.now() + 3600_000 },
-  "UNLIMITEDKEY123": { uses: 0, maxUses: 999, expires: Date.now() + 31536000000 } // about 1 year
-});
+// Load keys from environment variable once, store in globalThis
+const keys = globalThis.__KEYS__ || (globalThis.__KEYS__ = (() => {
+  try {
+    // KEYS_JSON should be something like:
+    // [{"key":"TESTKEY123","uses":0,"maxUses":1,"expires":1676496000000}]
+    const arr = JSON.parse(process.env.KEYS_JSON || "[]");
+    const obj = {};
+    arr.forEach(k => {
+      obj[k.key] = {
+        uses: k.uses || 0,
+        maxUses: k.maxUses || 1,
+        expires: k.expires || null
+      };
+    });
+    return obj;
+  } catch (err) {
+    console.error("Invalid KEYS_JSON", err);
+    return {};
+  }
+})());
 
 export default function handler(req, res) {
   // CORS headers
@@ -12,11 +28,9 @@ export default function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") return res.status(200).end();
-
   if (req.method !== "POST") return res.status(405).json({ ok: false });
 
   try {
-    console.log("BODY:", req.body); // DEBUG
     const { key, discordId } = req.body || {};
     if (!key || !discordId) return res.status(400).json({ ok: false });
 
@@ -27,7 +41,12 @@ export default function handler(req, res) {
 
     data.uses += 1;
 
-    res.status(200).json({ ok: true, uses: data.uses, remaining: data.maxUses - data.uses });
+    res.status(200).json({ 
+      ok: true, 
+      uses: data.uses, 
+      remaining: data.maxUses - data.uses,
+      expires: data.expires
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, error: String(err) });
