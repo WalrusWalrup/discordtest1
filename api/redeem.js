@@ -1,3 +1,7 @@
+export const config = {
+  api: { bodyParser: true } // ensures req.body is parsed
+};
+
 // in-memory key store (temp)
 const keys = globalThis.__KEYS__ || (globalThis.__KEYS__ = {
   // example for TESTING
