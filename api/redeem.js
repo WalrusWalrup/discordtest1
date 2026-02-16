@@ -1,7 +1,8 @@
 export const config = { api: { bodyParser: true } };
 
 const keys = globalThis.__KEYS__ || (globalThis.__KEYS__ = {
-  "TESTKEY123": { uses: 0, maxUses: 1, expires: Date.now() + 3600_000 }
+  "TESTKEY123": { uses: 0, maxUses: 1, expires: Date.now() + 3600_000 },
+  "UNLIMITEDKEY123": { uses: 0, maxUses: 999, expires: Date.now() + 31536000000 } // about 1 year
 });
 
 export default function handler(req, res) {
